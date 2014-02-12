@@ -34,7 +34,7 @@ function init() {
 	initCamera();
 	initLight();
 	
-	//addPlane();
+	initReferenceView();
 	
 	initMVC();
 }
@@ -72,16 +72,30 @@ function initLight() {
 }
 
 
-/* Draws checker board plane */
-function addPlane() {
-	var texture = THREE.ImageUtils.loadTexture('./image/checker_board.jpg');
-	var geometry = new THREE.PlaneGeometry(10, 10, 20, 20);
-	var material = new THREE.MeshLambertMaterial({map: texture});
-	var plane = new THREE.Mesh(geometry, material);
+function initReferenceView() {
+	var lineGeometryX = new THREE.Geometry();	
+	var lineMaterialX = new THREE.LineBasicMaterial({color: "rgb(255, 0, 0)", lineWidth: 1});
+
+	lineGeometryX.vertices.push(new THREE.Vector3(-10, 0, 0));
+	lineGeometryX.vertices.push(new THREE.Vector3(10, 0, 0));
 	
-	plane.rotation.x = -Math.PI / 2;
+	scene.add(new THREE.Line(lineGeometryX, lineMaterialX));
 	
-	scene.add(plane);
+	var lineGeometryY = new THREE.Geometry();	
+	var lineMaterialY = new THREE.LineBasicMaterial({color: "rgb(0, 255, 0)", lineWidth: 1});
+
+	lineGeometryY.vertices.push(new THREE.Vector3(0, -10, 0));
+	lineGeometryY.vertices.push(new THREE.Vector3(0, 10, 0));
+	
+	scene.add(new THREE.Line(lineGeometryY, lineMaterialY));
+	
+	var lineGeometryZ = new THREE.Geometry();	
+	var lineMaterialZ = new THREE.LineBasicMaterial({color: "rgb(0, 0, 255)", lineWidth: 1});
+
+	lineGeometryZ.vertices.push(new THREE.Vector3(0, 0, -10));
+	lineGeometryZ.vertices.push(new THREE.Vector3(0, 0, 10));
+	
+	scene.add(new THREE.Line(lineGeometryZ, lineMaterialZ));	
 }
 
 
@@ -153,22 +167,19 @@ function Controller(model) {
 	var self = this;
 	
 	this.addDatGUI = function() {
-		var gui = new dat.GUI();
+		var gui = new dat.GUI({ autoPlace: false });
+		var controlsContainer = document.getElementById('controls-container');
+		controlsContainer.appendChild(gui.domElement);
 		
-		gui.add(self, 'isCameraFollowing').name("Obrót kamery");
-		//gui.add(self.model, 'omega', 0, 10, 0.1).name("Omega").listen();
-	}
-	
-	this.setPlots = function() {
-		phaseSpacePlot = jQuery.plot("#phase_space_plot", [], { 
-			series: {shadowSize: 0},       
-			colors: ['blue'],      
-		});	
-		
-		potencialPlot = jQuery.plot("#potencial_plot", [], { 
-			series: {shadowSize: 0},       
-			colors: ['blue', 'red'],      
-		});	
+		gui.add(self.model, 'q', 0, 10, 0.1).listen();
+		gui.add(self.model, 'm', 0, 10, 0.1).listen();
+		gui.add(self.model, 'vx', 0, 10, 0.1).listen();
+		gui.add(self.model, 'Ex', 0, 10, 0.1).listen();
+		gui.add(self.model, 'Ey', 0, 10, 0.1).listen();
+		gui.add(self.model, 'Ez', 0, 10, 0.1).listen();
+		gui.add(self.model, 'Bx', 0, 10, 0.1).listen();
+		gui.add(self.model, 'By', 0, 10, 0.1).listen();
+		gui.add(self.model, 'Bz', 0, 10, 0.1).listen();
 	}
 	
 	this.toggleSimulationRunning = function() {
@@ -220,17 +231,18 @@ function View() {
 
 
 function Model() {
+	
+	this.Ex = 0;
+	this.Ey = 0;
+	this.Ez = 0;
+	this.Bx = 0;
+	this.By = 0;
+	this.Bz = 0;
 
-	this.R = 1;
-	this.m;
-	this.g;
-	this.omega;
-	this.theta;
-	this.thetaDot;
-	this.gamma;
-	
-	this.phi = 0;
-	
+	this.q = 1;
+	this.m = 1;
+	this.vx = 1;
+
 	this.view;
 	this.integrator;
 
