@@ -11,8 +11,6 @@ var height = container.offsetHeight;
 var accumulator = 0;
 var currentTime = getTimeInSeconds();
 
-var isRunning = true;
-
 
 window.addEventListener('blur', function() {
    isRunning = false;
@@ -25,7 +23,6 @@ window.addEventListener('focus', function() {
 
 init();
 animate();
-
 
 
 function init() {
@@ -127,7 +124,8 @@ function animate() {
 	var dt = controller.model.integrator.dt;
 
 	while (accumulator >= dt) {
-		if (isRunning && controller.isSimulationRunning) {
+		
+		if (controller.isSimulationRunning) {
 			controller.update();
 		}
 
@@ -136,15 +134,6 @@ function animate() {
 		
 	/* Will always point to the center of the frame */
 	cameraControls.target = new THREE.Vector3(0, 0, 0);
-	 
-	if (isRunning && controller.isSimulationRunning && controller.isCameraFollowing) {
-		cameraControls.rotateRight(controller.model.omega * frameTime);  
-	}
-
-	if (isRunning && controller.isSimulationRunning) {
-		controller.updatePlots();
-	}
-
 	cameraControls.update();
 
 	renderer.render(scene, camera);
@@ -175,39 +164,42 @@ function Controller(model) {
 		gui.add(self.model, 'm', 0, 10, 0.1).listen();
 		gui.add(self.model, 'vx', 0, 10, 0.1).listen();
 		
-		gui.add(self.model, 'Ex', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'Ex', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
-		gui.add(self.model, 'Ey', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'Ey', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
-		gui.add(self.model, 'Ez', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'Ez', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
 		
-		gui.add(self.model, 'Bx', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'Bx', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
-		gui.add(self.model, 'By', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'By', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
-		gui.add(self.model, 'Bz', -1, 1, 0.1).onChange(function(value) {
+		gui.add(self.model, 'Bz', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
-	}
+		
+		gui.add(self,'resetSimulation').name('Restart');
+		gui.add(self, 'toggleSimulationRunning').name('Start / Stop');
+	};
 	
 	this.toggleSimulationRunning = function() {
 		this.isSimulationRunning = !this.isSimulationRunning;
-	}
+	};
 	
 	this.resetSimulation = function() {
 		self.loadSimParameters();
 		self.update();
-	}
+	};
 		
 	this.update = function() {
 		this.model.move();
-	}
+	};
 	
 }
 
@@ -266,6 +258,12 @@ function View() {
 		magneticField.setLength(direction.length());		
 	};
 	
+	this.update = function(pos) {
+		particle.position.x = pos[0];
+		particle.position.y = pos[1];
+		particle.position.z = pos[2];
+	}
+	
 }
 
 
@@ -280,21 +278,29 @@ function Model() {
 	this.Bz = 0;
 
 	this.q = 1;
-	this.m = 1;
-	this.vx = 1;
+	this.m = 0.5;
+	this.vx = 0;
 
 	this.view;
 	this.integrator;
 
-	this.x = -10;
-	this.y = 0;
+	this.pos = [-10, 0, 0];
+	this.vel = [0, 0, 0];
 
-	this.posVel;
-	
 	var self = this;
 
-    this.accel = function(x, v) { 
-		return Math.sin(x) * (this.omega * this.omega * Math.cos(x) + this.g / this.R) - this.gamma / this.m * v;
+    this.accel = function(vel) { 
+		var qm = this.q / this.m;
+		
+		var vx = vel[0];
+		var vy = vel[1];
+		var vz = vel[2];
+		
+		var ax = qm * (this.Ex + vy * this.Bz - vz * this.By);
+		var ay = qm * (this.Ey + vz * this.Bx - vx * this.Bz);
+		var az = qm * (this.Ez + vx * this.By - vy * this.Bx);
+
+		return [ax, ay, az];
     };
         
     this.updateElectricField = function() {
@@ -306,14 +312,12 @@ function Model() {
 	};
         
     this.move = function() {
-        //this.posVel = this.integrator.integrate(this);
+        this.stateVector = this.integrator.integrate(this);
 
-        //this.theta = this.posVel[0];
-        //this.thetaDot = this.posVel[1];
+        this.pos = this.stateVector[0];
+        this.vel = this.stateVector[1];
 
-        //this.phi = this.phi + this.omega * this.integrator.dt;
-
-        
+		this.view.update(this.pos);
     };
     
 }
@@ -324,30 +328,53 @@ function RK4Integrator(dt) {
 	this.dt = dt;
 
     this.integrate = function(model) {
-        var x1, x2, x3, x4;
-        var v1, v2, v3, v4;
-        var a1, a2, a3, a4;
+        var x1 = [], x2 = [], x3 = [], x4 = [];
+        var v1 = [], v2 = [], v3 = [], v4 = [];
+        var a1 = [], a2 = [], a3 = [], a4 = [];
 
-        x1 = model.theta;        
-        v1 = model.thetaDot;
+        x1 = model.pos;        
+        v1 = model.vel;
         a1 = model.accel(x1, v1);
 
-        x2 = x1 + 0.5 * v1 * dt;
-        v2 = v1 + 0.5 * a1 * dt;
-        a2 = model.accel(x2, v2);
-    
-        x3= x1 + 0.5 * v2 * dt;
-        v3= v1 + 0.5 * a2 * dt;
-        a3 = model.accel(x3, v3);
-    
-        x4 = x1 + v3 * dt;
-        v4 = v1 + a3 * dt;
-        a4 = model.accel(x4, v4);
+        x2 = [x1[0] + 0.5 * v1[0] * dt, 
+			  x1[1] + 0.5 * v1[1] * dt, 
+              x1[2] + 0.5 * v1[2] * dt];
               
-        var x = x1 + (dt / 6.0) * (v1 + 2 * v2 + 2 * v3 + v4);
-        var v = v1 + (dt / 6.0) * (a1 + 2 * a2 + 2 * a3 + a4);                
+        v2 = [v1[0] + 0.5 * a1[0] * dt, 
+              v1[1] + 0.5 * a1[1] * dt,
+              v1[2] + 0.5 * a1[2] * dt];
+              
+        a2 = model.accel(v2);
+    
+        x3= [x1[0] + 0.5 * v2[0] * dt,
+             x1[1] + 0.5 * v2[1] * dt,
+             x1[2] + 0.5 * v2[2] * dt];
+             
+        v3= [v1[0] + 0.5 * a2[0] * dt,
+			 v1[1] + 0.5 * a2[1] * dt,
+			 v1[2] + 0.5 * a2[2] * dt];
+			 
+        a3 = model.accel(v3);
+    
+        x4 = [x1[0] + v3[0] * dt,
+              x1[1] + v3[1] * dt,
+              x1[2] + v3[2] * dt];
+              
+        v4 = [v1[0] + a3[0] * dt,
+              v1[1] + a3[1] * dt,
+              v1[2] + a3[2] * dt];
+              
+        a4 = model.accel(v4);
+              
+        var pos = [x1[0] + (dt / 6.0) * (v1[0] + 2 * v2[0] + 2 * v3[0] + v4[0]),
+                   x1[1] + (dt / 6.0) * (v1[1] + 2 * v2[1] + 2 * v3[1] + v4[1]),
+                   x1[2] + (dt / 6.0) * (v1[2] + 2 * v2[2] + 2 * v3[2] + v4[2])];
+                   
+        var vel = [v1[0] + (dt / 6.0) * (a1[0] + 2 * a2[0] + 2 * a3[0] + a4[0]),
+                   v1[1] + (dt / 6.0) * (a1[1] + 2 * a2[1] + 2 * a3[1] + a4[1]),
+                   v1[2] + (dt / 6.0) * (a1[2] + 2 * a2[2] + 2 * a3[2] + a4[2])];                
                 
-        return [x, v]
+        return [pos, vel]
     };
         
 }
