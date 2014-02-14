@@ -160,32 +160,40 @@ function Controller(model) {
 		var controlsContainer = document.getElementById('controls-container');
 		controlsContainer.appendChild(gui.domElement);
 		
-		gui.add(self.model, 'q', 0, 10, 0.01);
-		gui.add(self.model, 'm', 0, 10, 0.01);
-		gui.add(self.model, 'vx', 0, 10, 0.01);
+		var particleGroup = gui.addFolder('Parametry cząstki');
+		particleGroup.add(self.model, 'q', 0, 10, 0.01);
+		particleGroup.add(self.model, 'm', 0, 10, 0.01);
+		particleGroup.add(self.model, 'vx', 0, 10, 0.01);
+		particleGroup.open();
 		
-		gui.add(self.model, 'Ex', -1, 1, 0.01).onChange(function(value) {
+		var electricGroup = gui.addFolder('Pole elektryczne');
+		electricGroup.add(self.model, 'Ex', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
-		gui.add(self.model, 'Ey', -1, 1, 0.01).onChange(function(value) {
+		electricGroup.add(self.model, 'Ey', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
-		gui.add(self.model, 'Ez', -1, 1, 0.01).onChange(function(value) {
+		electricGroup.add(self.model, 'Ez', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
 		});
+		electricGroup.open();
 		
-		gui.add(self.model, 'Bx', -1, 1, 0.01).onChange(function(value) {
+		var magneticGroup = gui.addFolder('Pole magnetyczne');
+		magneticGroup.add(self.model, 'Bx', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
-		gui.add(self.model, 'By', -1, 1, 0.01).onChange(function(value) {
+		magneticGroup.add(self.model, 'By', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
-		gui.add(self.model, 'Bz', -1, 1, 0.01).onChange(function(value) {
+		magneticGroup.add(self.model, 'Bz', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateMagneticField();
 		});
+		magneticGroup.open();
 		
-		gui.add(self,'resetSimulation').name('Restart');
-		gui.add(self, 'toggleSimulationRunning').name('Start / Stop');
+		var controlsGroup = gui.addFolder('Symulacja');
+		controlsGroup .add(self,'resetSimulation').name('Restart');
+		controlsGroup .add(self, 'toggleSimulationRunning').name('Start / Stop');
+		controlsGroup.open();
 	};
 	
 	this.toggleSimulationRunning = function() {
@@ -193,16 +201,6 @@ function Controller(model) {
 	};
 	
 	this.resetSimulation = function() {
-/*		this.model.Ex = 0;
-		this.model.Ey = 0;
-		this.model.Ez = 0;
-		
-		this.model.Bx = 0;
-		this.model.By = 0;
-		this.model.Bz = 0; */
-
-/*		this.model.q = 1;
-		this.model.m = 0.1; */
 		this.model.vx = 0; 
 		
 	    this.model.pos = [-10, 0, 0];
@@ -231,16 +229,19 @@ function View() {
 	
 	function init() {		
 		var sourcePosElec = new THREE.Vector3(0, 0, 0);
-		var targetPosElec = new THREE.Vector3(0.1, 0.1, 0.1);
-		var directionElec = new THREE.Vector3().subVectors(targetPosElec, sourcePosElec);
+		var targetPosElec = new THREE.Vector3(0.0001, 0, 0);
 
-		electricField = new THREE.ArrowHelper(directionElec.clone().normalize(), sourcePosElec, directionElec.length(), "rgb(255, 0, 0)");
-	
+		electricField = new THREE.ArrowHelper(targetPosElec, sourcePosElec, targetPosElec.length(), "rgb(255, 0, 0)");
+		//electricField.line.material.linewidth = 2;
+		//electricField.cone.geometry.radiusBottom = 150;
+		//electricField.cone.geometry.radiusTop = 1;
+		//electricField.cone.geometry.height = 50;
+
 		var sourcePosMagn = new THREE.Vector3(0, 0, 0);
-		var targetPosMagn = new THREE.Vector3(0.1, 0.1, 0.1);
-		var directionMagn = new THREE.Vector3().subVectors(targetPosMagn, sourcePosMagn);
+		var targetPosMagn = new THREE.Vector3(0.0001, 0, 0);
 
-		magneticField = new THREE.ArrowHelper(directionMagn.clone().normalize(), sourcePosMagn, directionMagn.length(), "rgb(0, 255, 0)");
+		magneticField = new THREE.ArrowHelper(targetPosMagn, sourcePosMagn, targetPosMagn.length(), "rgb(0, 0, 255)");
+		//magneticField.line.material.linewidth = 7;
 	
         var particleGeometry = new THREE.SphereGeometry(0.05, 32, 32);
         var particleMaterial = new THREE.MeshPhongMaterial({color: "rgb(255, 0, 0)"});
@@ -255,21 +256,17 @@ function View() {
 	};
 	
 	this.setElectricField = function(Ex, Ey, Ez) {
-		var sourcePos = new THREE.Vector3(0, 0, 0);
 		var targetPos = new THREE.Vector3(Ex, Ey, Ez);
-		var direction = new THREE.Vector3().subVectors(targetPos, sourcePos);
-		
-		electricField.setDirection(direction.normalize());
-		electricField.setLength(direction.length());		
+
+		electricField.setDirection(targetPos);
+		electricField.setLength(targetPos.length());		
 	};
 	
 	this.setMagneticField = function(Bx, By, Bz) {
-		var sourcePos = new THREE.Vector3(0, 0, 0);
 		var targetPos = new THREE.Vector3(Bx, By, Bz);
-		var direction = new THREE.Vector3().subVectors(targetPos, sourcePos);
-		
-		magneticField.setDirection(direction.normalize());
-		magneticField.setLength(direction.length());		
+
+		magneticField.setDirection(targetPos);
+		magneticField.setLength(targetPos.length());		
 	};
 	
 	this.update = function(pos) {
