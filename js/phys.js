@@ -29,10 +29,8 @@ function init() {
 	initRenderer();
 	initScene();
 	initCamera();
-	initLight();
-	
-	initReferenceView();
-	
+	initLight();	
+	initReferenceView();	
 	initMVC();
 }
 
@@ -101,13 +99,16 @@ function initMVC() {
 	
 	var model = new Model();
 	var view = new View();
+	
 	var integrator = new RK4Integrator(dt);
+	//var integrator = new SemiImplicitEulerIntegrator(dt);
 
 	model.view = view;
 	model.integrator = integrator;
 	
 	controller = new Controller(model);
 	controller.addDatGUI();
+	controller.resetSimulation();
 
 	view.addToScene(scene);		
 }
@@ -150,7 +151,6 @@ function getTimeInSeconds() {
 function Controller(model) {
 	
 	this.model = model;
-	this.isCameraFollowing = true; 
 	this.isSimulationRunning = false;
 
 	var self = this;
@@ -160,9 +160,9 @@ function Controller(model) {
 		var controlsContainer = document.getElementById('controls-container');
 		controlsContainer.appendChild(gui.domElement);
 		
-		gui.add(self.model, 'q', 0, 10, 0.1).listen();
-		gui.add(self.model, 'm', 0, 10, 0.1).listen();
-		gui.add(self.model, 'vx', 0, 10, 0.1).listen();
+		gui.add(self.model, 'q', 0, 10, 0.01);
+		gui.add(self.model, 'm', 0, 10, 0.01);
+		gui.add(self.model, 'vx', 0, 10, 0.01);
 		
 		gui.add(self.model, 'Ex', -1, 1, 0.01).onChange(function(value) {
 			self.model.updateElectricField();
@@ -193,7 +193,21 @@ function Controller(model) {
 	};
 	
 	this.resetSimulation = function() {
-		self.loadSimParameters();
+/*		this.model.Ex = 0;
+		this.model.Ey = 0;
+		this.model.Ez = 0;
+		
+		this.model.Bx = 0;
+		this.model.By = 0;
+		this.model.Bz = 0; */
+
+/*		this.model.q = 1;
+		this.model.m = 0.1; */
+		this.model.vx = 0; 
+		
+	    this.model.pos = [-10, 0, 0];
+		this.model.vel = [0, 0, 0];
+		
 		self.update();
 	};
 		
@@ -278,14 +292,14 @@ function Model() {
 	this.Bz = 0;
 
 	this.q = 1;
-	this.m = 0.5;
+	this.m = 0.1;
 	this.vx = 0;
 
 	this.view;
 	this.integrator;
 
 	this.pos = [-10, 0, 0];
-	this.vel = [0, 0, 0];
+	this.vel = [this.vx, 0, 0];
 
 	var self = this;
 
@@ -323,6 +337,33 @@ function Model() {
 }
 
 
+/*function SemiImplicitEulerIntegrator(dt) {
+	
+	this.dt = dt;
+	
+	this.integrate = function(model) {
+		var x = [];
+		var v = [];
+		var a = [];
+		
+		x = model.pos;
+		v = model.vel;
+		a = model.accel(v)
+		
+		var vel = [v[0] + a[0] * dt, 
+		           v[1] + a[1] * dt, 
+		           v[2] + a[2] * dt];
+		       
+		var pos = [x[0] + vel[0] * dt, 
+		           x[1] + vel[1] * dt,
+		           x[2] + vel[2] * dt];
+		
+		return [pos, vel];
+	};
+	
+}*/
+
+
 function RK4Integrator(dt) {
 	
 	this.dt = dt;
@@ -334,7 +375,7 @@ function RK4Integrator(dt) {
 
         x1 = model.pos;        
         v1 = model.vel;
-        a1 = model.accel(x1, v1);
+        a1 = model.accel(v1);
 
         x2 = [x1[0] + 0.5 * v1[0] * dt, 
 			  x1[1] + 0.5 * v1[1] * dt, 
@@ -374,7 +415,7 @@ function RK4Integrator(dt) {
                    v1[1] + (dt / 6.0) * (a1[1] + 2 * a2[1] + 2 * a3[1] + a4[1]),
                    v1[2] + (dt / 6.0) * (a1[2] + 2 * a2[2] + 2 * a3[2] + a4[2])];                
                 
-        return [pos, vel]
+        return [pos, vel];
     };
         
 }
