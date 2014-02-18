@@ -98,10 +98,8 @@ function initMVC() {
 	var dt = 0.01;
 	
 	var model = new Model();
-	var view = new View();
-	
+	var view = new View();	
 	var integrator = new RK4Integrator(dt);
-	//var integrator = new SemiImplicitEulerIntegrator(dt);
 
 	model.view = view;
 	model.integrator = integrator;
@@ -115,7 +113,6 @@ function initMVC() {
 
 
 function animate() {
-
 	var newTime = getTimeInSeconds();
 	var frameTime = newTime - currentTime;
 	currentTime = newTime;
@@ -139,7 +136,6 @@ function animate() {
 
 	renderer.render(scene, camera);
     requestAnimationFrame(animate);	
- 
 }
 
 
@@ -161,38 +157,76 @@ function Controller(model) {
 		controlsContainer.appendChild(gui.domElement);
 		
 		var particleGroup = gui.addFolder('Parametry cząstki');
-		particleGroup.add(self.model, 'q', 0, 10, 0.01);
-		particleGroup.add(self.model, 'm', 0, 10, 0.01);
-		particleGroup.add(self.model, 'vx', 0, 10, 0.01);
 		particleGroup.open();
 		
+		particleGroup.add(self.model, 'q', 0, 10, 0.01);
+		particleGroup.add(self.model, 'm', 0, 10, 0.01);
+		
+		var vxControl = particleGroup.add(self.model, 'vx', 0, 10, 0.01);
+		vxControl.listen();
+		vxControl.onChange(function(value) {
+			self.model.updateVelocity();
+		});
+		
+		var vyControl = particleGroup.add(self.model, 'vy', 0, 10, 0.01);
+		vyControl.listen();
+		vyControl.onChange(function(value) {
+			self.model.updateVelocity();
+		});
+		
+		var vzControl = particleGroup.add(self.model, 'vz', 0, 10, 0.01);
+		vzControl.listen();
+		vzControl.onChange(function(value) {
+			self.model.updateVelocity();
+		});
+	
+		
 		var electricGroup = gui.addFolder('Pole elektryczne');
-		electricGroup.add(self.model, 'Ex', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateElectricField();
-		});
-		electricGroup.add(self.model, 'Ey', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateElectricField();
-		});
-		electricGroup.add(self.model, 'Ez', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateElectricField();
-		});
 		electricGroup.open();
 		
+		var ExControl = electricGroup.add(self.model, 'Ex', -1, 1, 0.01);
+		ExControl.listen();
+		ExControl.onChange(function(value) {
+			self.model.updateElectricField();
+		});
+		
+		var EyControl = electricGroup.add(self.model, 'Ey', -1, 1, 0.01);
+		EyControl.listen();
+		EyControl.onChange(function(value) {
+			self.model.updateElectricField();
+		});
+		
+		var EzControl = electricGroup.add(self.model, 'Ez', -1, 1, 0.01);
+		EzControl.listen();
+		EzControl.onChange(function(value) {
+			self.model.updateElectricField();
+		});
+
+
 		var magneticGroup = gui.addFolder('Pole magnetyczne');
-		magneticGroup.add(self.model, 'Bx', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateMagneticField();
-		});
-		magneticGroup.add(self.model, 'By', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateMagneticField();
-		});
-		magneticGroup.add(self.model, 'Bz', -1, 1, 0.01).onChange(function(value) {
-			self.model.updateMagneticField();
-		});
 		magneticGroup.open();
 		
+		var BxControl = magneticGroup.add(self.model, 'Bx', -1, 1, 0.01);
+		BxControl.listen();
+		BxControl.onChange(function(value) {
+			self.model.updateMagneticField();
+		});
+		
+		var ByControl = magneticGroup.add(self.model, 'By', -1, 1, 0.01);
+		ByControl.listen();
+		ByControl.onChange(function(value) {
+			self.model.updateMagneticField();
+		});
+		
+		var BzControl = magneticGroup.add(self.model, 'Bz', -1, 1, 0.01);
+		BzControl.listen();
+		BzControl.onChange(function(value) {
+			self.model.updateMagneticField();
+		});
+
 		var controlsGroup = gui.addFolder('Symulacja');
-		controlsGroup .add(self,'resetSimulation').name('Restart');
-		controlsGroup .add(self, 'toggleSimulationRunning').name('Start / Stop');
+		controlsGroup.add(self, 'resetSimulation').name('Restart');
+		controlsGroup.add(self, 'toggleSimulationRunning').name('Start / Stop');
 		controlsGroup.open();
 	};
 	
@@ -201,10 +235,7 @@ function Controller(model) {
 	};
 	
 	this.resetSimulation = function() {
-		this.model.vx = 0; 
-		
-	    this.model.pos = [-10, 0, 0];
-		this.model.vel = [0, 0, 0];
+		this.model.restart();
 		
 		self.update();
 	};
@@ -277,16 +308,13 @@ function View() {
 		magneticField.setLength(targetPos.length());		
 	};
 	
-	this.update = function(pos) {	
-		for (var i = 0 ; i < TRAJECTORY_BUFFER ; i++) {
-			trajectory.geometry.vertices[i].x = trajectory.geometry.vertices[i + 1].x;
-			trajectory.geometry.vertices[i].y = trajectory.geometry.vertices[i + 1].y;
-			trajectory.geometry.vertices[i].z = trajectory.geometry.vertices[i + 1].z;
+	this.update = function(pos, traj) {	
+		for (var i = 0 ; i < TRAJECTORY_BUFFER + 1 ; i++) {
+			trajectory.geometry.vertices[i].x = traj[i][0];
+			trajectory.geometry.vertices[i].y = traj[i][1];
+			trajectory.geometry.vertices[i].z = traj[i][2];
 		}
-			
-		trajectory.geometry.vertices[TRAJECTORY_BUFFER].x = pos[0];
-		trajectory.geometry.vertices[TRAJECTORY_BUFFER].y = pos[1];
-		trajectory.geometry.vertices[TRAJECTORY_BUFFER].z = pos[2];
+
 		trajectory.geometry.verticesNeedUpdate = true;
 		
 		particle.position.x = pos[0];
@@ -309,15 +337,28 @@ function Model() {
 
 	this.q = 1;
 	this.m = 0.1;
+	
 	this.vx = 0;
+	this.vy = 0;
+	this.vz = 0;
 
 	this.view;
 	this.integrator;
 
 	this.pos = [-10, 0, 0];
-	this.vel = [this.vx, 0, 0];
+	this.vel = [this.vx, this.vy, this.vz];
+	this.trajectory = [];
 
 	var self = this;
+	var TRAJECTORY_BUFFER = 2000;
+	
+	initTrajectory();
+
+	function initTrajectory() {		
+		for (var i = 0 ; i < TRAJECTORY_BUFFER + 1 ; i++) {
+			self.trajectory.push(self.pos);
+		}		
+	};
 
     this.accel = function(vel) { 
 		var qm = this.q / this.m;
@@ -333,6 +374,10 @@ function Model() {
 		return [ax, ay, az];
     };
         
+	this.updateVelocity = function() {
+		this.vel = [this.vx, this.vy, this.vz];
+	};
+        
     this.updateElectricField = function() {
 		this.view.setElectricField(this.Ex, this.Ey, this.Ez);
 	};
@@ -340,14 +385,47 @@ function Model() {
 	this.updateMagneticField = function() {
 		this.view.setMagneticField(this.Bx, this.By, this.Bz);
 	};
+	
+	this.restart = function() {
+		this.Ex = 0;
+		this.Ey = 0;
+		this.Ez = 0;
+	
+		this.Bx = 0;
+		this.By = 0;
+		this.Bz = 0;
+		
+		this.vx = 0; 
+		this.vy = 0;
+		this.vz = 0;
+		
+	    this.pos = [-10, 0, 0];
+		this.vel = [this.vx, this.vy, this.vz];
+		
+		for (var i = 0 ; i < TRAJECTORY_BUFFER + 1 ; i++) {
+			this.trajectory[i] = this.pos;
+		}
+
+		this.view.update(this.pos, this.trajectory);
+	};
 
     this.move = function() {
         this.stateVector = this.integrator.integrate(this);
 
         this.pos = this.stateVector[0];
         this.vel = this.stateVector[1];
+        
+        this.vx = this.vel[0];
+        this.vy = this.vel[1];
+        this.vz = this.vel[2];
 
-		this.view.update(this.pos);
+		for (var i = 0 ; i < TRAJECTORY_BUFFER ; i++) {
+			this.trajectory[i] = this.trajectory[i + 1];
+		}
+			
+		this.trajectory[TRAJECTORY_BUFFER] = this.pos;
+		
+		this.view.update(this.pos, this.trajectory);
     };
     
 }
