@@ -217,11 +217,14 @@ function Controller(model) {
 
 
 function View() {
+	
+	var TRAJECTORY_BUFFER = 2000;
 
 	var electricField;
 	var magneticField;
 	
 	var particle;
+	var trajectory;
 
 	var self = this;
 
@@ -247,12 +250,22 @@ function View() {
         var particleMaterial = new THREE.MeshPhongMaterial({color: "rgb(255, 0, 0)"});
         
         particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        
+        var lineGeometry = new THREE.Geometry();
+        var lineMaterial = new THREE.LineBasicMaterial({ color: "rgb(0, 0, 0)", lineWidth: 2 });
+        
+        for (var i = 0 ; i < TRAJECTORY_BUFFER + 1 ; i++) {
+			lineGeometry.vertices.push(new THREE.Vector3(-10, 0, 0));
+		}
+                
+        trajectory = new THREE.Line(lineGeometry, lineMaterial);
 	};
 	
 	this.addToScene = function(scene) {
 		scene.add(particle);
 		scene.add(electricField);
 		scene.add(magneticField);
+		scene.add(trajectory);
 	};
 	
 	this.setElectricField = function(Ex, Ey, Ez) {
@@ -269,11 +282,22 @@ function View() {
 		magneticField.setLength(targetPos.length());		
 	};
 	
-	this.update = function(pos) {
+	this.update = function(pos) {	
+		for (var i = 0 ; i < TRAJECTORY_BUFFER ; i++) {
+			trajectory.geometry.vertices[i].x = trajectory.geometry.vertices[i + 1].x;
+			trajectory.geometry.vertices[i].y = trajectory.geometry.vertices[i + 1].y;
+			trajectory.geometry.vertices[i].z = trajectory.geometry.vertices[i + 1].z;
+		}
+			
+		trajectory.geometry.vertices[TRAJECTORY_BUFFER].x = pos[0];
+		trajectory.geometry.vertices[TRAJECTORY_BUFFER].y = pos[1];
+		trajectory.geometry.vertices[TRAJECTORY_BUFFER].z = pos[2];
+		trajectory.geometry.verticesNeedUpdate = true;
+		
 		particle.position.x = pos[0];
 		particle.position.y = pos[1];
 		particle.position.z = pos[2];
-	}
+	};
 	
 }
 
@@ -321,7 +345,7 @@ function Model() {
 	this.updateMagneticField = function() {
 		this.view.setMagneticField(this.Bx, this.By, this.Bz);
 	};
-        
+
     this.move = function() {
         this.stateVector = this.integrator.integrate(this);
 
