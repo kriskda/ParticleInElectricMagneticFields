@@ -235,16 +235,11 @@ function View() {
 		var targetPosElec = new THREE.Vector3(0.0001, 0, 0);
 
 		electricField = new THREE.ArrowHelper(targetPosElec, sourcePosElec, targetPosElec.length(), "rgb(255, 0, 0)");
-		//electricField.line.material.linewidth = 2;
-		//electricField.cone.geometry.radiusBottom = 150;
-		//electricField.cone.geometry.radiusTop = 1;
-		//electricField.cone.geometry.height = 50;
 
 		var sourcePosMagn = new THREE.Vector3(0, 0, 0);
 		var targetPosMagn = new THREE.Vector3(0.0001, 0, 0);
 
 		magneticField = new THREE.ArrowHelper(targetPosMagn, sourcePosMagn, targetPosMagn.length(), "rgb(0, 0, 255)");
-		//magneticField.line.material.linewidth = 7;
 	
         var particleGeometry = new THREE.SphereGeometry(0.05, 32, 32);
         var particleMaterial = new THREE.MeshPhongMaterial({color: "rgb(255, 0, 0)"});
@@ -356,33 +351,6 @@ function Model() {
     };
     
 }
-
-
-/*function SemiImplicitEulerIntegrator(dt) {
-	
-	this.dt = dt;
-	
-	this.integrate = function(model) {
-		var x = [];
-		var v = [];
-		var a = [];
-		
-		x = model.pos;
-		v = model.vel;
-		a = model.accel(v)
-		
-		var vel = [v[0] + a[0] * dt, 
-		           v[1] + a[1] * dt, 
-		           v[2] + a[2] * dt];
-		       
-		var pos = [x[0] + vel[0] * dt, 
-		           x[1] + vel[1] * dt,
-		           x[2] + vel[2] * dt];
-		
-		return [pos, vel];
-	};
-	
-}*/
 
 
 function RK4Integrator(dt) {
