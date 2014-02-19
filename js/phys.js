@@ -178,8 +178,7 @@ function Controller(model) {
 		vzControl.listen();
 		vzControl.onChange(function(value) {
 			self.model.updateVelocity();
-		});
-	
+		});	
 		
 		var electricGroup = gui.addFolder('Pole elektryczne');
 		electricGroup.open();
@@ -201,7 +200,6 @@ function Controller(model) {
 		EzControl.onChange(function(value) {
 			self.model.updateElectricField();
 		});
-
 
 		var magneticGroup = gui.addFolder('Pole magnetyczne');
 		magneticGroup.open();
@@ -263,12 +261,12 @@ function View() {
 	
 	function init() {		
 		var sourcePosElec = new THREE.Vector3(0, 0, 0);
-		var targetPosElec = new THREE.Vector3(0.0001, 0, 0);
+		var targetPosElec = new THREE.Vector3(0, 0, 0);
 
 		electricField = new THREE.ArrowHelper(targetPosElec, sourcePosElec, targetPosElec.length(), "rgb(255, 0, 0)");
 
 		var sourcePosMagn = new THREE.Vector3(0, 0, 0);
-		var targetPosMagn = new THREE.Vector3(0.0001, 0, 0);
+		var targetPosMagn = new THREE.Vector3(0, 0, 0);
 
 		magneticField = new THREE.ArrowHelper(targetPosMagn, sourcePosMagn, targetPosMagn.length(), "rgb(0, 0, 255)");
 	
