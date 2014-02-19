@@ -1,4 +1,6 @@
 ParticleInElectricMagneticFields
 ================================
 
-Visualization of particle moving in electric &amp; magnetic fields
+Visualization of particle moving in electric & magnetic fields:
+
+![Alt text](/screenshot.jpg "Screenshot")
