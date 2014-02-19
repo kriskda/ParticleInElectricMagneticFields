@@ -51,7 +51,7 @@ function initScene() {
 
 function initCamera() {
     camera = new THREE.PerspectiveCamera(55, width / height, 1, 100);
-    camera.position.set(0, 1, 4);   
+    camera.position.set(3, 1, 3);   
     
     cameraControls = new THREE.OrbitControls(camera, renderer.domElement);    
     cameraControls.noPan = false;
@@ -69,7 +69,7 @@ function initLight() {
 
 function initReferenceView() {
 	var lineGeometryX = new THREE.Geometry();	
-	var lineMaterialX = new THREE.LineBasicMaterial({color: "rgb(255, 0, 0)", lineWidth: 1});
+	var lineMaterialX = new THREE.LineBasicMaterial({color: "rgb(255, 0, 0)", linewidth: 2});
 
 	lineGeometryX.vertices.push(new THREE.Vector3(-10, 0, 0));
 	lineGeometryX.vertices.push(new THREE.Vector3(10, 0, 0));
@@ -77,7 +77,7 @@ function initReferenceView() {
 	scene.add(new THREE.Line(lineGeometryX, lineMaterialX));
 	
 	var lineGeometryY = new THREE.Geometry();	
-	var lineMaterialY = new THREE.LineBasicMaterial({color: "rgb(0, 255, 0)", lineWidth: 1});
+	var lineMaterialY = new THREE.LineBasicMaterial({color: "rgb(0, 255, 0)", linewidth: 2});
 
 	lineGeometryY.vertices.push(new THREE.Vector3(0, -10, 0));
 	lineGeometryY.vertices.push(new THREE.Vector3(0, 10, 0));
@@ -85,12 +85,33 @@ function initReferenceView() {
 	scene.add(new THREE.Line(lineGeometryY, lineMaterialY));
 	
 	var lineGeometryZ = new THREE.Geometry();	
-	var lineMaterialZ = new THREE.LineBasicMaterial({color: "rgb(0, 0, 255)", lineWidth: 1});
+	var lineMaterialZ = new THREE.LineBasicMaterial({color: "rgb(0, 0, 255)", linewidth: 2});
 
 	lineGeometryZ.vertices.push(new THREE.Vector3(0, 0, -10));
 	lineGeometryZ.vertices.push(new THREE.Vector3(0, 0, 10));
 	
 	scene.add(new THREE.Line(lineGeometryZ, lineMaterialZ));	
+
+	for (var i = -15 ; i <= 15 ; i++) {
+		var lineGeometryPlane = new THREE.Geometry();
+		var lineMaterialPlane = new THREE.LineBasicMaterial({color: "rgb(100, 100, 100)", linewidth: 0.5});
+		
+		lineGeometryPlane.vertices.push(new THREE.Vector3(i, 0, -15));
+		lineGeometryPlane.vertices.push(new THREE.Vector3(i, 0, 15));
+		
+		scene.add(new THREE.Line(lineGeometryPlane, lineMaterialPlane));	
+	}
+	
+	for (var i = -15 ; i <= 15 ; i++) {
+		var lineGeometryPlane = new THREE.Geometry();
+		var lineMaterialPlane = new THREE.LineBasicMaterial({color: "rgb(100, 100, 100)", linewidth: 0.5});
+		
+		lineGeometryPlane.vertices.push(new THREE.Vector3(-15, 0, i));
+		lineGeometryPlane.vertices.push(new THREE.Vector3(15, 0, i));
+		
+		scene.add(new THREE.Line(lineGeometryPlane, lineMaterialPlane));	
+	}	
+	
 }
 
 
@@ -260,23 +281,29 @@ function View() {
 	init();
 	
 	function init() {		
-		var sourcePosElec = new THREE.Vector3(0, 0, 0);
-		var targetPosElec = new THREE.Vector3(0, 0, 0);
+		var electricFieldGeometry = new THREE.Geometry();
+		var electricFieldMaterial = new THREE.LineBasicMaterial({ color: "rgb(255, 0, 0)", linewidth: 5 });
+		
+		electricFieldGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		electricFieldGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		
+		electricField = new THREE.Line(electricFieldGeometry, electricFieldMaterial);
+		
+		var magneticFieldGeometry = new THREE.Geometry();
+		var magneticFieldMaterial = new THREE.LineBasicMaterial({ color: "rgb(0, 0, 255)", linewidth: 5 });
+		
+		magneticFieldGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		magneticFieldGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		
+		magneticField = new THREE.Line(magneticFieldGeometry, magneticFieldMaterial);
 
-		electricField = new THREE.ArrowHelper(targetPosElec, sourcePosElec, targetPosElec.length(), "rgb(255, 0, 0)");
-
-		var sourcePosMagn = new THREE.Vector3(0, 0, 0);
-		var targetPosMagn = new THREE.Vector3(0, 0, 0);
-
-		magneticField = new THREE.ArrowHelper(targetPosMagn, sourcePosMagn, targetPosMagn.length(), "rgb(0, 0, 255)");
-	
         var particleGeometry = new THREE.SphereGeometry(0.05, 32, 32);
         var particleMaterial = new THREE.MeshPhongMaterial({color: "rgb(255, 0, 0)"});
         
         particle = new THREE.Mesh(particleGeometry, particleMaterial);
         
         var lineGeometry = new THREE.Geometry();
-        var lineMaterial = new THREE.LineBasicMaterial({ color: "rgb(0, 0, 0)", lineWidth: 2 });
+        var lineMaterial = new THREE.LineBasicMaterial({ color: "rgb(0, 0, 0)", linewidth: 1.5 });
         
         for (var i = 0 ; i < TRAJECTORY_BUFFER + 1 ; i++) {
 			lineGeometry.vertices.push(new THREE.Vector3(-10, 0, 0));
@@ -293,17 +320,19 @@ function View() {
 	};
 	
 	this.setElectricField = function(Ex, Ey, Ez) {
-		var targetPos = new THREE.Vector3(Ex, Ey, Ez);
+		electricField.geometry.vertices[1].x = Ex;
+		electricField.geometry.vertices[1].y = Ey;
+		electricField.geometry.vertices[1].z = Ez;	
 
-		electricField.setDirection(targetPos);
-		electricField.setLength(targetPos.length());		
+		electricField.geometry.verticesNeedUpdate = true;
 	};
 	
 	this.setMagneticField = function(Bx, By, Bz) {
-		var targetPos = new THREE.Vector3(Bx, By, Bz);
+		magneticField.geometry.vertices[1].x = Bx;
+		magneticField.geometry.vertices[1].y = By;
+		magneticField.geometry.vertices[1].z = Bz;	
 
-		magneticField.setDirection(targetPos);
-		magneticField.setLength(targetPos.length());		
+		magneticField.geometry.verticesNeedUpdate = true;	
 	};
 	
 	this.update = function(pos, traj) {	
