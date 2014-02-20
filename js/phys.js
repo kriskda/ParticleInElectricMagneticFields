@@ -179,9 +179,9 @@ function Controller(model) {
 		
 		var particleGroup = gui.addFolder('Parametry cząstki');
 		particleGroup.open();
-		
-		particleGroup.add(self.model, 'q', 0, 10, 0.01);
-		particleGroup.add(self.model, 'm', 0, 10, 0.01);
+
+		particleGroup.add(self.model, 'q', 0, 10, 0.01).listen();
+		particleGroup.add(self.model, 'm', 0, 10, 0.01).listen();
 		
 		var vxControl = particleGroup.add(self.model, 'vx', 0, 10, 0.01);
 		vxControl.listen();
@@ -421,6 +421,12 @@ function Model() {
 		this.Bx = 0;
 		this.By = 0;
 		this.Bz = 0;
+		
+		this.updateElectricField();
+		this.updateMagneticField();
+		
+		this.q = 1;
+		this.m = 0.1;
 		
 		this.vx = 0; 
 		this.vy = 0;
