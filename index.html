@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<title>Cząstka poruszająca się w polu elektrycznym i magnetycznym</title>
+        
+	<meta charset="utf-8"> 
+    
+	<script src="js/three.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+
+	<script type="text/x-mathjax-config"> 
+  		MathJax.Hub.Config({
+    		extensions: ["tex2jax.js"],
+    		jax: ["input/TeX","output/HTML-CSS"],
+    		tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+  		});
+	</script>   
+	
+	<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="css/mainstyle.css" />
+    
+</head>
+
+<body>
+	
+
+
+<div id="container">
+	
+	<div id="header">
+		
+		<h1>Cząstka poruszająca się w polu elektrycznym i magnetycznym</h1>
+		<p class="text">
+		Cząstka o ładunku $q$ i masie $m$ porusza się w polu elektrycznym i magnetycznym. W każdej chwili działa na nią siła Lorentza 
+		$\vec{F} = q (\vec{E} + \vec{v} \times \vec{B}).$ Na poniższej wizualizacji linia czerwona symbolizuje oś $X$, linia zielona to 
+		oś $Y$, natomiast kolorem niebieskim oś $Z$. Położenie początkowe cząstki to $(x, y, z) = (-10, 0, 0)$. <br />
+		Źródło tej wizualizacji dostępne jest tutaj: <a href="http://github.com/kriskda/ParticleInElectricMagneticFields" target="_blank">http://github.com/kriskda/ParticleInElectricMagneticFields</a>
+		</p> 
+		
+	</div>
+	
+
+	<div id="content">
+		
+		<div id="plots">
+			<table class="plotarea">    
+			
+				<tr>
+					<td><div id="threejs_container" style="width:850px; height:600px;"></div></td>
+					<td><div id="controls-container" style="width:250px; height:600px;"></div></td>
+				</tr>
+				
+			</table>	
+		</div>			
+		
+		<div class="theory">
+			<p class="text">
+			<h3>Interesujące przypadki</h3>
+			
+			<ul>
+			<li>$B_z = 1$, $E_y = 1$ (cykloida)</li>
+			<li>$B_z = 1$, $E_y = 1$, $v_y = 10$</li>
+			<li>$B_x = 1$, $v_x = 2$, $v_y = 2$</li>
+			</ul>
+			
+			</p>		
+		</div>	
+		
+	</div>
+
+</div>
+
+
+</body>
+
+<script src="js/phys.js"></script>
+
+</html>
